@@ -1,29 +1,15 @@
+import logging
 from typing import Optional
 
-from pandas import DataFrame
+import MetaTrader5 as Mt5
 
-from const import LOGGER_GLOBAL
-from tools.other_tools.global_tools import logMessageDate
-from tools.trade_tools.trade_basemodel import TradeObject
-
-try:
-    import MetaTrader5 as Mt5
-except:
-    pass
-
+from trade_tools.trade_basemodel import TradeObject
 from mt5_connector.account import Account
-from tools.trade_tools.tools_trade import (
+from trade_tools.tools_trade import (
     calc_position_size_forex,
     get_order_history,
     positions_get,
 )
-
-__author__ = "Thibault Delrieu"
-__copyright__ = "Copyright 2021, Thibault Delrieu"
-__license__ = "MIT"
-__maintainer__ = "Thibault Delrieu"
-__email__ = "thibault.delrieu.pro@gmail.com"
-__status__ = "Production"
 
 
 class Trade:
@@ -46,24 +32,24 @@ class Trade:
         self.ticket_order = None
         if self.order_type == Mt5.ORDER_TYPE_BUY_LIMIT:
             self.action = Mt5.TRADE_ACTION_PENDING
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a buy limit trade on {self.symbol}!")
+            logging.info(f"trying to set a buy limit trade on {self.symbol}!")
         elif self.order_type == Mt5.ORDER_TYPE_SELL_LIMIT:
             self.action = Mt5.TRADE_ACTION_PENDING
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a sell limit trade on {self.symbol}!")
+            logging.info(f"trying to set a sell limit trade on {self.symbol}!")
         elif self.order_type == Mt5.ORDER_TYPE_BUY:
             self.action = Mt5.TRADE_ACTION_DEAL
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a direct buy trade on {self.symbol}!")
+            logging.info(f"trying to set a direct buy trade on {self.symbol}!")
         elif self.order_type == Mt5.ORDER_TYPE_SELL:
             self.action = Mt5.TRADE_ACTION_DEAL
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a direct sell trade on {self.symbol}!")
+            logging.info(f"trying to set a direct sell trade on {self.symbol}!")
         elif self.order_type == Mt5.ORDER_TYPE_BUY_STOP:
             self.action = Mt5.TRADE_ACTION_PENDING
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a buy stop trade on {self.symbol}!")
+            logging.info(f"trying to set a buy stop trade on {self.symbol}!")
         elif self.order_type == Mt5.ORDER_TYPE_SELL_STOP:
             self.action = Mt5.TRADE_ACTION_PENDING
-            logMessageDate(LOGGER_GLOBAL.info, f"trying to set a sell stop trade on {self.symbol}!")
+            logging.info(f"trying to set a sell stop trade on {self.symbol}!")
         else:
-            logMessageDate(LOGGER_GLOBAL.error, "cannot proceed, unrecognized order type")
+            raise ValueError(f"unrecognized order type: {self.order_type}")
         self.request_open = {
             "action": self.action,
             "symbol": self.symbol,
@@ -104,8 +90,7 @@ class Trade:
             return False, None
 
         if self.action == Mt5.TRADE_ACTION_PENDING and self.price is None:
-            logMessageDate(LOGGER_GLOBAL.error, "You need to give a price for a pending order")
-            return None
+            raise ValueError("You need to give a price for a pending order")
         if self.action == Mt5.TRADE_ACTION_DEAL:
             self.finding_actual_price()
             self.request_open["deviation"] = 20
