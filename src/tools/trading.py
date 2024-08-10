@@ -1,30 +1,39 @@
+"""
+file where you can find all misc tools about trading
+"""
+
 from typing import Dict, List, Optional
 from copy import deepcopy
+from pathlib import Path
 
 import pytz
 from datetime import datetime, timedelta
-
-try:
-    import MetaTrader5 as Mt5
-except:
-    pass
+import MetaTrader5 as Mt5
 import pandas as pd
 import yaml
-from pathlib import Path
 from termcolor import colored
 
 from mt5_connector.account import Account
 
 
-def calc_lot_forex(
+def find_lot_forex(
         risk: float,
         symbol: str,
         sl: float,
         balance: float,
         account_currency_conversion: float,
-):
-    """
-    calc lot size for forex
+) -> float:
+    """help you found the lot for a forex trade.
+
+    Args:
+        risk (float): risk of the trade
+        symbol (str): symbol of the trade
+        sl (float): stop loss of the trade
+        balance (float): balance of your account
+        account_currency_conversion (float): _description_
+
+    Returns:
+        float: lot for the specified risk, sl and symbol
     """
     percentage_converter = 0.01
     risk_percentage = risk * percentage_converter
@@ -40,11 +49,18 @@ def calc_lot_forex(
     return lot_size
 
 
-def calc_account_currency_conversion(
+def find_account_currency_conversion(
         account_currency: str, symbol: str, current_price_symbols: Dict
 ):
-    """
-    calculate the price conversion between the traded symbol and your account currency
+    """calculate the price conversion between the traded symbol and your account currency
+
+    Args:
+        account_currency (str): symbol of the account currency
+        symbol (str): symbol where you want to apply the conversion
+        current_price_symbols (Dict): the current price of the symbol
+
+    Returns:
+        _type_: _description_
     """
     currency_2 = symbol[3:6]
     other_character = symbol[6:]
@@ -72,22 +88,31 @@ def calc_account_currency_conversion(
     return account_currency_conversion
 
 
-def calc_position_size_forex(
+def find_position_size_forex(
         symbol: str,
         account_currency: str,
         risk: float,
         sl: float,
         current_price_symbols: dict,
 ) -> Optional[float]:
-    """
-    return lot size for forex
+    """return lot size for forex
+
+    Args:
+        symbol (str): _description_
+        account_currency (str): _description_
+        risk (float): _description_
+        sl (float): _description_
+        current_price_symbols (dict): _description_
+
+    Returns:
+        Optional[float]: _description_
     """
     account = Mt5.account_info()
     balance = account.balance
-    account_currency_conversion = calc_account_currency_conversion(
+    account_currency_conversion = find_account_currency_conversion(
         account_currency, symbol, current_price_symbols
     )
-    lot_size = calc_lot_forex(risk, symbol, sl, balance, account_currency_conversion)
+    lot_size = find_lot_forex(risk, symbol, sl, balance, account_currency_conversion)
     return lot_size
 
 
@@ -95,8 +120,14 @@ def get_order_history(
         date_from: datetime = datetime.now() - timedelta(hours=24),
         date_to: datetime = datetime.now() + timedelta(hours=5),
 ):
-    """
-    get history of trades from the connected account
+    """get history of trades from the connected account
+
+    Args:
+        date_from (datetime, optional): _description_. Defaults to datetime.now()-timedelta(hours=24).
+        date_to (datetime, optional): _description_. Defaults to datetime.now()+timedelta(hours=5).
+
+    Returns:
+        _type_: _description_
     """
     res = Mt5.history_deals_get(date_from, date_to)
     if res is not None and res != ():
@@ -108,8 +139,10 @@ def get_order_history(
 
 
 def calc_daily_lost_trades():
-    """
-    calculate the daily lost trades
+    """calculate the daily lost trades
+
+    Returns:
+        _type_: _description_
     """
     now = datetime.now().astimezone(pytz.timezone("Etc/GMT-3"))
     now = datetime(now.year, now.month, now.day, hour=now.hour, minute=now.minute)
@@ -128,8 +161,10 @@ def calc_daily_lost_trades():
 
 
 def get_daily_trade_data():
-    """
-    calculate the daily lost trades
+    """calculate the daily lost trades
+
+    Returns:
+        _type_: _description_
     """
     now = datetime.now().astimezone(pytz.timezone("Etc/GMT-3"))
     now = datetime(now.year, now.month, now.day, hour=now.hour, minute=now.minute)
@@ -141,8 +176,15 @@ def get_daily_trade_data():
 def check_max_drawdown(
         initial_balance: float, current_balance: float, max_drawdown: float
 ) -> bool:
-    """
-    check if the loss exceed the max given drawdown
+    """check if the loss exceed the max given drawdown
+
+    Args:
+        initial_balance (float): _description_
+        current_balance (float): _description_
+        max_drawdown (float): _description_
+
+    Returns:
+        bool: _description_
     """
     percentage = 0.01
     max_drawdown_percentage = max_drawdown * percentage
@@ -154,8 +196,13 @@ def check_max_drawdown(
 
 
 def positions_get(symbol=None) -> pd.DataFrame:
-    """
-    return all on going positions
+    """return all on going positions
+
+    Args:
+        symbol (_type_, optional): _description_. Defaults to None.
+
+    Returns:
+        pd.DataFrame: _description_
     """
     if symbol is None:
         res = Mt5.positions_get()
@@ -170,8 +217,10 @@ def positions_get(symbol=None) -> pd.DataFrame:
 
 
 def closing_all_pending_order(my_account: Account):
-    """
-    close all pending order
+    """close all pending order
+
+    Args:
+        my_account (Account): _description_
     """
     pending_trade_dict = deepcopy(my_account.trade_pending)
     for ticket_order, trade_pending in pending_trade_dict.items():
@@ -179,8 +228,10 @@ def closing_all_pending_order(my_account: Account):
 
 
 def closing_all_on_going_order(my_account: Account):
-    """
-    close all on going order
+    """close all on going order
+
+    Args:
+        my_account (Account): _description_
     """
     on_going_trade_dict = deepcopy(my_account.trade_on_going)
     for ticket_order, trade_on_going in on_going_trade_dict.items():
@@ -188,8 +239,13 @@ def closing_all_on_going_order(my_account: Account):
 
 
 def check_symbol(pair: str):
-    """
-    check if the symbol given by the user exist in the broker trading list
+    """check if the symbol given by the user exist in the broker trading list
+
+    Args:
+        pair (str): _description_
+
+    Returns:
+        _type_: _description_
     """
     symbol_info = Mt5.symbol_info(pair)
     if symbol_info is None:
@@ -204,6 +260,14 @@ def check_symbol(pair: str):
 def recup_all_symbol_conversion(
         path_symbol_broker: str = "config/symbol_broker.yaml",
 ) -> Dict[str, List[str]]:
+    """_summary_
+
+    Args:
+        path_symbol_broker (str, optional): _description_. Defaults to "config/symbol_broker.yaml".
+
+    Returns:
+        Dict[str, List[str]]: _description_
+    """
     absolute_path_launch = Path.cwd()
     symbol_broker_path = absolute_path_launch / path_symbol_broker
     with open(symbol_broker_path) as symbol_broker_file:
@@ -261,7 +325,16 @@ def close_one_trade_on_going(trade: pd.Series):
         return True
 
 
-def moveTP(trade, new_tp: float) -> bool:
+def move_tp(trade, new_tp: float) -> bool:
+    """_summary_
+
+    Args:
+        trade (_type_): _description_
+        new_tp (float): _description_
+
+    Returns:
+        bool: _description_
+    """
     stop_loss_trade = trade.sl
     take_profit_trade = trade.tp
     symbol = trade.symbol
@@ -294,7 +367,16 @@ def moveTP(trade, new_tp: float) -> bool:
         return False
 
 
-def moveSL(trade, new_sl: float) -> bool:
+def move_sl(trade, new_sl: float) -> bool:
+    """_summary_
+
+    Args:
+        trade (_type_): _description_
+        new_sl (float): _description_
+
+    Returns:
+        bool: _description_
+    """
     stop_loss_trade = trade.sl
     take_profit_trade = trade.tp
     symbol = trade.symbol
@@ -328,6 +410,15 @@ def moveSL(trade, new_sl: float) -> bool:
 
 
 def move_sl_to_be(trade, decal_sl_be: float) -> bool:
+    """_summary_
+
+    Args:
+        trade (_type_): _description_
+        decal_sl_be (float): _description_
+
+    Returns:
+        bool: _description_
+    """
     stop_loss_trade = trade.sl
     entering_price = trade.price_open
     take_profit_trade = trade.tp
@@ -369,7 +460,15 @@ def move_sl_to_be(trade, decal_sl_be: float) -> bool:
         return False
 
 
-def getIntervalInTimeframe(TF_name: str):
+def get_interval_in_timeframe(TF_name: str):
+    """_summary_
+
+    Args:
+        TF_name (str): _description_
+
+    Returns:
+        _type_: _description_
+    """
     if TF_name == "M1":
         time_interval = timedelta(days=0, hours=0, minutes=1)
     elif TF_name == "M5":

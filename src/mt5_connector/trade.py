@@ -1,12 +1,11 @@
-import logging
 from typing import Optional
 
 import MetaTrader5 as Mt5
 
-from trade_tools.trade_basemodel import TradeObject
+from tools.basemodel import TradeObject
 from mt5_connector.account import Account
-from trade_tools.tools_trade import (
-    calc_position_size_forex,
+from tools.trading import (
+    find_position_size_forex,
     get_order_history,
     positions_get,
 )
@@ -30,26 +29,6 @@ class Trade:
         self.sl = trade_object.sl
         self.result_open_request = None
         self.ticket_order = None
-        if self.order_type == Mt5.ORDER_TYPE_BUY_LIMIT:
-            self.action = Mt5.TRADE_ACTION_PENDING
-            logging.info(f"trying to set a buy limit trade on {self.symbol}!")
-        elif self.order_type == Mt5.ORDER_TYPE_SELL_LIMIT:
-            self.action = Mt5.TRADE_ACTION_PENDING
-            logging.info(f"trying to set a sell limit trade on {self.symbol}!")
-        elif self.order_type == Mt5.ORDER_TYPE_BUY:
-            self.action = Mt5.TRADE_ACTION_DEAL
-            logging.info(f"trying to set a direct buy trade on {self.symbol}!")
-        elif self.order_type == Mt5.ORDER_TYPE_SELL:
-            self.action = Mt5.TRADE_ACTION_DEAL
-            logging.info(f"trying to set a direct sell trade on {self.symbol}!")
-        elif self.order_type == Mt5.ORDER_TYPE_BUY_STOP:
-            self.action = Mt5.TRADE_ACTION_PENDING
-            logging.info(f"trying to set a buy stop trade on {self.symbol}!")
-        elif self.order_type == Mt5.ORDER_TYPE_SELL_STOP:
-            self.action = Mt5.TRADE_ACTION_PENDING
-            logging.info(f"trying to set a sell stop trade on {self.symbol}!")
-        else:
-            raise ValueError(f"unrecognized order type: {self.order_type}")
         self.request_open = {
             "action": self.action,
             "symbol": self.symbol,
@@ -167,7 +146,7 @@ class Trade:
         """
 
         difference_sl_price = abs(self.sl - self.price)
-        volume = calc_position_size_forex(
+        volume = find_position_size_forex(
             self.symbol,
             account_currency,
             risk,

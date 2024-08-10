@@ -1,11 +1,16 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 from typing import Optional, Dict, Any
 
-from pydantic import BaseModel
 
+@dataclass
+class TradeObject():
+    """A BaseModel object representing a Trade
 
-class TradeObject(BaseModel):
+    Args:
+        BaseModel: Parent class
+    """
     symbol: str
     symbol_conversion: str
     order_type: int
@@ -24,6 +29,3 @@ class TradeObject(BaseModel):
     additional_info: str = ""
     changing_tp_management: Optional[Dict[str, Any]]
     changing_sl_management: Optional[Dict[str, Any]]
-
-    class Config:
-        arbitrary_types_allowed = True
