@@ -4,7 +4,7 @@ from typing import Any, Union
 
 import yaml
 
-from tools.const import YAML_TYPE
+from tools.global_object import YAML_TYPE
 
 
 class Singleton(type):
@@ -40,15 +40,3 @@ def read_yaml(path_yaml: Union[str, Path]) -> YAML_TYPE:
     with open(path_yaml, 'r') as file:
         config_file = yaml.load(file, Loader=yaml.FullLoader)
     return config_file
-
-
-def log_message_date(status_log, message_to_log: str):
-    """log a message with a certain format
-
-    Args:
-        status_log (_type_): _description_
-        message_to_log (str): _description_
-    """
-    now = datetime.now()
-    date_now = now.strftime("%d/%m/%Y %H:%M:%S")
-    status_log(f"{date_now}: {message_to_log}")
