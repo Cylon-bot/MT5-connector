@@ -31,7 +31,7 @@ class Account(metaclass=Singleton):
     account_currency: str
     account_info: mt5.AccountInfo
 
-    def __init__(self, connection_file_path: Union[str, Path]):
+    def __init__(self, connection_file_path: Union[str, Path]) -> None:
         """Use the given yaml file path to connect to the metatrade5 account.
 
         example of a valid input file :
@@ -79,8 +79,8 @@ class Account(metaclass=Singleton):
         self.account_info = mt5.account_info()
 
     @staticmethod
-    def get_order_history(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeDeal]:
-        """get history of trades from the connected account.
+    def get_order_history_by_date(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeDeal]:
+        """get history of trades from the connected account using dates.
 
         Args:
             date_from (datetime): date from which we get the historical trade (take care, this will take the metatrader5 time zone).
@@ -89,11 +89,27 @@ class Account(metaclass=Singleton):
         Returns:
             tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.
         """
-        res = mt5.history_deals_get(date_from, date_to)
+        res = mt5.history_deals_get(date_from=date_from, date_to=date_to)
         if res is not None and res != ():
             return res
         else:
-            return None
+            return ()
+
+    @staticmethod
+    def get_order_history_by_ticket(ticket: int) -> tuple[mt5.TradeDeal]:
+        """get history of trades from the connected account using ticket order.
+
+        Args:
+            ticket (int): ticket order use to retrieve historical trades
+
+        Returns:
+            tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.
+        """
+        res = mt5.history_deals_get(ticket=ticket)
+        if res is not None and res != ():
+            return res
+        else:
+            return ()
 
     @staticmethod
     def get_positions(symbol: Optional[str] = None) -> tuple[mt5.TradePosition]:
@@ -113,7 +129,7 @@ class Account(metaclass=Singleton):
         if res is not None and res != ():
             return res
         else:
-            return None
+            return ()
 
     @staticmethod
     def check_symbol(symbol: str) -> bool:

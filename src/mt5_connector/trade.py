@@ -2,15 +2,14 @@ from typing import Optional
 
 import MetaTrader5 as mt5
 
-from errors.trade_error import NoPriceGiven, NoTradableSymbol
+from errors.trade_error import NoTradableSymbol
 from tools.dataclass_definition import MarketOrder, TradeObject
 from mt5_connector.account import Account
 from tools.global_object import (
-    DIRECT_ORDERS,
-    PENDING_ORDERS,
     DirectOrder,
     OrderTypeFilling,
     OrderTypeTime,
+    PendingOrder,
     TradeRequestActions,
     mt5_connector_logger,
 )
@@ -27,7 +26,7 @@ class TradeManagement:
     trade: TradeObject
     account: Account
 
-    def __init__(self, trade_object: TradeObject, account: Account):
+    def __init__(self, trade_object: TradeObject, account: Account) -> None:
         """initialise this object
 
         Args:
@@ -37,34 +36,33 @@ class TradeManagement:
         self.trade = trade_object
         self.account = account
 
-    def open_position(self) -> "response_mt5":
+    def open_position(self) -> mt5.OrderSendResult:
         """open a new position using the Trade attribute
 
         Raises:
             NoTradableSymbol: Raise this error if you attempt to create a position on a no tradable symbol.
-            NoPriceGiven: Raise this error if you attempt to create a pending order without a price.
-            ValueError: Raise this error if you gave a unrecognized trade order type
 
         Returns:
-            response_mt5: _description_
+            mt5.OrderSendResult: result sent by MT5
         """
 
-        symbol_is_tradable = self.check_symbol(self.trade.symbol)
+        symbol_is_tradable = self.account.check_symbol(self.trade.symbol)
         if not symbol_is_tradable:
             raise NoTradableSymbol("failed to open position cause this symbol cannot be found or trade.")
-
-        if self.trade.volume is None:
-            self.trade.volume = self.find_position_size_forex()
 
         order_type_is_direct_order = isinstance(self.trade.order_type, DirectOrder)
         if order_type_is_direct_order:
             self.finding_actual_price()
 
-        request_open = MarketOrder(
+        if self.trade.volume is None:
+            self.trade.volume = self.find_position_size_forex()
+
+        open_request = MarketOrder(
             action=(
-                TradeRequestActions.TRADE_ACTION_DEAL
+                TradeRequestActions.TRADE_ACTION_DEAL.value
                 if order_type_is_direct_order
-                else TradeRequestActions.TRADE_ACTION_PENDING
+
+                else TradeRequestActions.TRADE_ACTION_PENDING.value
             ),
             symbol=self.trade.symbol,
             volume=self.trade.volume,
@@ -72,179 +70,138 @@ class TradeManagement:
             sl=self.trade.sl,
             tp=self.trade.tp,
             deviation=self.trade.deviation,
-            order_type=self.trade.order_type,
-            type_filling=OrderTypeFilling.ORDER_FILLING_FOK,
-            type_time=OrderTypeTime.ORDER_TIME_GTC,
+            order_type=self.trade.order_type.value,
+            type_filling=OrderTypeFilling.ORDER_FILLING_FOK.value,
+            type_time=OrderTypeTime.ORDER_TIME_GTC.value,
             expiration=self.trade.expiration,
             comment=self.trade.comment,
         )
-        result_open_request = mt5.order_send(request_open.__dict__())
-        iterator = 0
-        while (
-            result_open_request.comment == "Requote"
-            or (result_open_request.comment == "Invalid price")
-            or (result_open_request.comment == "No prices")
-            or (result_open_request.comment == "Invalid volume")
-        ) and iterator < 50:
-            self.finding_actual_price()
-            self.request_open.price = self.trade.price
-
-            if self.trade.volume is None:
-                self.trade.volume = self.find_position_size_forex()
-                self.request_open.volume = self.trade.volume
-                result_open_request = mt5.order_send(request_open.__dict__())
-                iterator += 1
+        result_open_request = mt5.order_send(open_request.__dict__())
 
         if result_open_request.retcode != mt5.TRADE_RETCODE_DONE:
-            mt5_connector_logger.error(f"Failed to send order, retcode: {result_open_request.retcode}")
+            mt5_connector_logger.error("Failed to send order")
         else:
-            self.trade.ticket = result_open_request.ticket
+            self.trade.ticket = result_open_request.order
+            self.trade.deal = result_open_request.deal
+            mt5_connector_logger.info("Order successfully opened!")
         return result_open_request
 
-    def finding_actual_price(self):
-        """
-        in case of a direct order, we need to find the actual price
-        """
-        if self.trade.order_type == mt5.ORDER_TYPE_BUY:
-            self.trade.price = mt5.symbol_info_tick(self.symbol).ask
-        elif self.trade.order_type == mt5.ORDER_TYPE_SELL:
-            self.trade.price = mt5.symbol_info_tick(self.symbol).bid
+    def close_position(self, volume_to_close: Optional[float] = None) -> mt5.OrderSendResult:
+        """close a position either pending or in going.
 
-    def close_position(self) -> "result_close_request":
-        """
-        close a position either pending or in going
-        """
-        all_trade_on_going = self.account.get_positions()
-        if all_trade_on_going.empty:
-            all_ticket_on_going_trade = []
-        else:
-            all_ticket_on_going_trade = list(all_trade_on_going["ticket"].iloc[:])
-        history_trade = self.account.get_order_history()
+        Args:
+            volume_to_close (Optional[float]): if no volume is provided, the position will be completely closed, oterwise it will be partially close by the amout of given volume.
 
-        if history_trade.empty:
-            all_ticket_history_trade = []
-        else:
-            all_ticket_history_trade = list(history_trade["order"].iloc[:])
+        Returns:
+            mt5.OrderSendResult: result sent by MT5
+        """
+        all_trade_on_going = [trade.ticket for trade in self.account.get_positions()]
         order_type_close = None
         price_close = None
 
-        if self.trade.ticket in all_ticket_history_trade:
-            raise ValueError("This order is no longer on pending or on going so cannot proceed to close")
-
-        elif self.trade.ticket in all_ticket_on_going_trade:
+        if self.trade.ticket in all_trade_on_going:
 
             if (
-                self.order_type == mt5.ORDER_TYPE_BUY
-                or self.order_type == mt5.ORDER_TYPE_BUY_STOP
-                or self.order_type == mt5.ORDER_TYPE_BUY_LIMIT
+                self.trade.order_type == DirectOrder.ORDER_TYPE_BUY
+                or self.trade.order_type == PendingOrder.ORDER_TYPE_BUY_STOP
+                or self.trade.order_type == PendingOrder.ORDER_TYPE_BUY_LIMIT
             ):
-                order_type_close = mt5.ORDER_TYPE_SELL
-                price_close = mt5.symbol_info_tick(self.symbol).bid
+                order_type_close = DirectOrder.ORDER_TYPE_SELL.value
+                price_close = mt5.symbol_info_tick(self.trade.symbol).bid
             elif (
-                self.order_type == mt5.ORDER_TYPE_SELL
-                or self.order_type == mt5.ORDER_TYPE_SELL_STOP
-                or self.order_type == mt5.ORDER_TYPE_SELL_LIMIT
+                self.trade.order_type == DirectOrder.ORDER_TYPE_SELL
+                or self.trade.order_type == PendingOrder.ORDER_TYPE_SELL_STOP
+                or self.trade.order_type == PendingOrder.ORDER_TYPE_SELL_LIMIT
             ):
-                order_type_close = mt5.ORDER_TYPE_BUY
-                price_close = mt5.symbol_info_tick(self.symbol).ask
-            close_request = {
-                "action": mt5.TRADE_ACTION_DEAL,
-                "symbol": self.symbol,
-                "volume": self.size,
-                "type": order_type_close,
-                "position": self.ticket_order,
-                "price": price_close,
-                "magic": 234000,
-                "comment": "Close trade",
-                "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_FOK,
-            }
+                order_type_close = DirectOrder.ORDER_TYPE_BUY.value
+                price_close = mt5.symbol_info_tick(self.trade.symbol).ask
+
+            close_request = MarketOrder(
+                action=TradeRequestActions.TRADE_ACTION_DEAL.value,
+                symbol=self.trade.symbol,
+                volume=volume_to_close if volume_to_close is not None else self.trade.volume,
+                order_type=order_type_close,
+                position=self.trade.ticket,
+                price=price_close,
+                type_filling=OrderTypeFilling.ORDER_FILLING_FOK.value,
+                type_time=OrderTypeTime.ORDER_TIME_GTC.value,
+                comment="Close trade",
+            )
         else:
-            close_request = {
-                "action": mt5.TRADE_ACTION_REMOVE,
-                "order": self.trade.ticket,
-                "magic": 234000,
-                "comment": "Close trade",
-            }
-        result_close_request = mt5.order_send(close_request)
-
-        while result_close_request.comment == "Requote" and self.request_open["action"] == mt5.TRADE_ACTION_DEAL:
-            if (
-                self.order_type == mt5.ORDER_TYPE_BUY
-                or self.order_type == mt5.ORDER_TYPE_BUY_STOP
-                or self.order_type == mt5.ORDER_TYPE_BUY_LIMIT
-            ):
-                price_close = mt5.symbol_info_tick(self.symbol).bid
-                close_request["price"] = price_close
-            elif (
-                self.order_type == mt5.ORDER_TYPE_SELL
-                or self.order_type == mt5.ORDER_TYPE_SELL_STOP
-                or self.order_type == mt5.ORDER_TYPE_SELL_LIMIT
-            ):
-                price_close = mt5.symbol_info_tick(self.symbol).ask
-                close_request["price"] = price_close
-            result_close_request = mt5.order_send(close_request)
+            close_request = MarketOrder(action=TradeRequestActions.TRADE_ACTION_REMOVE.value,
+                                        ticket=self.trade.ticket,
+                                        comment="Close trade")
+        result_close_request = mt5.order_send(close_request.__dict__())
 
         if result_close_request.retcode != mt5.TRADE_RETCODE_DONE:
-            mt5_connector_logger.error(f"Failed to close order :( \n {result_close_request}")
+            mt5_connector_logger.error("Failed to close order")
         else:
+            self.trade.volume -= volume_to_close if volume_to_close is not None else self.trade.volume
             mt5_connector_logger.info("Order successfully closed!")
 
         return result_close_request
 
-    def move_tp(self, new_tp: float) -> None:
-        """_summary_
+    def finding_actual_price(self):
+        """in case of a direct order, we need to find the actual price
+        """
+        if self.trade.order_type == DirectOrder.ORDER_TYPE_BUY:
+            self.trade.price = mt5.symbol_info_tick(self.trade.symbol).ask
+        elif self.trade.order_type == DirectOrder.ORDER_TYPE_SELL:
+            self.trade.price = mt5.symbol_info_tick(self.trade.symbol).bid
+
+    def move_tp(self, new_tp: float) -> mt5.OrderSendResult:
+        """move your tp on your on going trade
 
         Args:
-            new_tp (float): _description_
+            new_tp (float): new tp to set
+
+        Returns:
+            mt5.OrderSendResult: result sent by MT5
         """
-        stop_loss_trade = self.trade.sl
         take_profit_trade = self.trade.tp
-        symbol = self.trade.symbol
-        ticket = self.trade.ticket
-        trade_comment = self.trade.comment
-        if float(take_profit_trade) != new_tp:
-            modify_request = {
-                "action": mt5.TRADE_ACTION_SLTP,
-                "symbol": symbol,
-                "sl": stop_loss_trade,
-                "position": int(ticket),
-                "tp": new_tp,
-                "comment": trade_comment,
-            }
-            result_modify_request = mt5.order_send(modify_request)
+        if take_profit_trade != new_tp:
+            modify_request = MarketOrder(
+                action=TradeRequestActions.TRADE_ACTION_SLTP.value,
+                symbol=self.trade.symbol,
+                sl=self.trade.sl,
+                tp=new_tp,
+                position=self.trade.ticket,
+                comment=self.trade.comment,
+            )
+            result_modify_request = mt5.order_send(modify_request.__dict__())
             if result_modify_request.retcode != mt5.TRADE_RETCODE_DONE:
-                raise ValueError(f"Failed to modify order, retcode: {result_modify_request.retcode}")
+                mt5_connector_logger.error("Failed to modify TP")
             else:
                 mt5_connector_logger.info(f"successfully moved TP from {self.trade.tp} to {new_tp}")
                 self.trade.tp = new_tp
+        return result_modify_request
 
-    def move_sl(self, new_sl: float):
-        """_summary_
+    def move_sl(self, new_sl: float) -> mt5.OrderSendResult:
+        """move your sl on your on going trade
 
         Args:
-            new_sl (float): _description_
+            new_sl (float): new sl to set
+
+        Returns:
+            mt5.OrderSendResult: result sent by MT5
         """
         stop_loss_trade = self.trade.sl
-        take_profit_trade = self.trade.tp
-        symbol = self.trade.symbol
-        ticket = self.trade.ticket
-        trade_comment = self.trade.comment
-        if float(stop_loss_trade) != new_sl:
-            modify_request = {
-                "action": mt5.TRADE_ACTION_SLTP,
-                "symbol": symbol,
-                "sl": new_sl,
-                "position": int(ticket),
-                "tp": take_profit_trade,
-                "comment": trade_comment,
-            }
-            result_modify_request = mt5.order_send(modify_request)
+        if stop_loss_trade != new_sl:
+            modify_request = MarketOrder(
+                action=TradeRequestActions.TRADE_ACTION_SLTP.value,
+                symbol=self.trade.symbol,
+                sl=new_sl,
+                tp=self.trade.tp,
+                position=self.trade.ticket,
+                comment=self.trade.comment,
+            )
+            result_modify_request = mt5.order_send(modify_request.__dict__())
             if result_modify_request.retcode != mt5.TRADE_RETCODE_DONE:
-                raise ValueError(f"Failed to modify order, retcode: {result_modify_request.retcode}")
+                mt5_connector_logger.error("Failed to modify SL")
             else:
                 mt5_connector_logger.info(f"successfully moved SL from {self.trade.sl} to {new_sl}")
                 self.trade.sl = new_sl
+        return result_modify_request
 
     def find_position_size_forex(self) -> float:
         """help you found the lot for a forex trade.
@@ -269,14 +226,14 @@ class TradeManagement:
         lot_size = round(calculate_lot, 2)
         return lot_size
 
-    def find_account_currency_conversion(self):
+    def find_account_currency_conversion(self) -> float:
         """find the price conversion between the traded symbol and your account currency
 
         Raises:
-            ValueError: _description_
+            ValueError: Raise this error if we were unable to find the lot for your symbol
 
         Returns:
-            _type_: _description_
+            float: price conversion
         """
         currency_2 = self.trade.symbol[3:6]
         other_character = self.trade.symbol[6:]

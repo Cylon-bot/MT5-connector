@@ -16,6 +16,7 @@ class TradeObject:
         order_type (Order): Order type. The value can be one of the values of the Order enumeration.
         deviation (float): Maximum acceptable deviation from the requested price, specified in points. Defaults to 20 points.
         ticket (int): Order ticket. Required for modifying pending orders.
+        deal (int): deal id. Required for requesting trade after it is closed.
         price (Optional, float): Price at which an order should be executed. The price is not set in case of market orders having the DirectOrder type.
         sl (Optional, float): A price a Stop Loss order is activated at when the price moves in an unfavorable direction.
         tp (Optional, float): A price a Take Profit order is activated at when the price moves in a favorable direction.
@@ -27,8 +28,9 @@ class TradeObject:
 
     symbol: str
     order_type: Order
-    deviation: float = 20
     ticket: int = field(init=False)
+    deal: int = field(init=False)
+    deviation: float = 20
     price: Optional[float] = None
     volume: Optional[float] = None
     sl: Optional[float] = None
@@ -80,32 +82,36 @@ class MarketOrder:
     Attr:
         action (TradeRequestActions): Trading operation type. The value can be one of the values of the TradeRequestActions enumeration.
         magic (int): EA ID. Allows arranging the analytical handling of trading orders. Each EA can set a unique ID when sending a trading request.
-        symbol (str): The name of the trading instrument, for which the order is placed. Not required when modifying orders and closing positions.
+        ticket (Optional, int): Order ticket. Required for modifying pending orders.
+        symbol (Optional, str): The name of the trading instrument, for which the order is placed. Not required when modifying orders and closing positions.
         volume (Optional, float): Requested volume of a deal in lots. A real volume when making a deal depends on an order execution type.
         price (Optional, float): Price at which an order should be executed. The price is not set in case of market orders having the DirectOrder type.
         sl (Optional, float): A price a Stop Loss order is activated at when the price moves in an unfavorable direction.
         tp (Optional, float): A price a Take Profit order is activated at when the price moves in a favorable direction.
-        deviation (float): Maximum acceptable deviation from the requested price, specified in points.
-        order_type (Order): Order type. The value can be one of the values of the Order enumeration.
-        type_filling (OrderTypeFilling): Order filling type. The value can be one of the OrderTypeFilling values.
-        type_time (OrderTypeTime): Order type by expiration. The value can be one of the OrderTypeTime values.
+        deviation (Optional, float): Maximum acceptable deviation from the requested price, specified in points.
+        order_type (Optional, Order): Order type. The value can be one of the values of the Order enumeration.
+        type_filling (Optional, OrderTypeFilling): Order filling type. The value can be one of the OrderTypeFilling values.
+        type_time (Optional, OrderTypeTime): Order type by expiration. The value can be one of the OrderTypeTime values.
+        position (Optional, int): Position ticket. Fill it when changing and closing a position for its clear identification. Usually, it is the same as the ticket of the order that opened the position.
         expiration (Optional, datetime): Pending order expiration time.
         comment (Optional, str): Comment attach to an order.
     """
 
     action: TradeRequestActions
     magic: int = field(init=False)
-    symbol: str
+    ticket: Optional[int] = None
+    symbol: Optional[str] = None
     volume: Optional[float] = None
     price: Optional[float] = None
     sl: Optional[float] = None
     tp: Optional[float] = None
-    deviation: float
-    order_type: Order
-    type_filling: OrderTypeFilling
-    type_time: OrderTypeTime
+    deviation: Optional[float] = None
+    order_type: Optional[Order] = None
+    position: Optional[int] = None
+    type_filling: Optional[OrderTypeFilling] = None
+    type_time: Optional[OrderTypeTime] = None
     expiration: Optional[datetime] = None
-    comment: Optional[str]
+    comment: Optional[str] = None
 
     def __post_init__(self):
         self.magic = randint(0, 1_000_000)
@@ -114,9 +120,11 @@ class MarketOrder:
         dict_request = {
             "action": self.action,
             "magic": self.magic,
+            "order": self.ticket,
             "symbol": self.symbol,
             "volume": self.volume,
             "price": self.price,
+            "position": self.position,
             "sl": self.sl,
             "tp": self.tp,
             "deviation": self.deviation,
@@ -127,4 +135,4 @@ class MarketOrder:
             "comment": self.comment,
         }
 
-        return {key: value for key, value in dict_request if value is not None}
+        return {key: value for key, value in dict_request.items() if value is not None}
