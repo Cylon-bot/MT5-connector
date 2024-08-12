@@ -5,7 +5,15 @@ import MetaTrader5 as mt5
 from errors.trade_error import NoPriceGiven, NoTradableSymbol
 from tools.dataclass_definition import MarketOrder, TradeObject
 from mt5_connector.account import Account
-from tools.global_object import DIRECT_ORDERS, PENDING_ORDERS, DirectOrder, OrderTypeFilling, OrderTypeTime, TradeRequestActions, mt5_connector_logger
+from tools.global_object import (
+    DIRECT_ORDERS,
+    PENDING_ORDERS,
+    DirectOrder,
+    OrderTypeFilling,
+    OrderTypeTime,
+    TradeRequestActions,
+    mt5_connector_logger,
+)
 
 
 class TradeManagement:
@@ -52,18 +60,24 @@ class TradeManagement:
         if order_type_is_direct_order:
             self.finding_actual_price()
 
-        request_open = MarketOrder(action=TradeRequestActions.TRADE_ACTION_DEAL if order_type_is_direct_order else TradeRequestActions.TRADE_ACTION_PENDING,
-                                   symbol=self.trade.symbol,
-                                   volume=self.trade.volume,
-                                   price=self.trade.price,
-                                   sl=self.trade.sl,
-                                   tp=self.trade.tp,
-                                   deviation=self.trade.deviation,
-                                   order_type=self.trade.order_type,
-                                   type_filling=OrderTypeFilling.ORDER_FILLING_FOK,
-                                   type_time=OrderTypeTime.ORDER_TIME_GTC,
-                                   expiration=self.trade.expiration,
-                                   comment=self.trade.comment)
+        request_open = MarketOrder(
+            action=(
+                TradeRequestActions.TRADE_ACTION_DEAL
+                if order_type_is_direct_order
+                else TradeRequestActions.TRADE_ACTION_PENDING
+            ),
+            symbol=self.trade.symbol,
+            volume=self.trade.volume,
+            price=self.trade.price,
+            sl=self.trade.sl,
+            tp=self.trade.tp,
+            deviation=self.trade.deviation,
+            order_type=self.trade.order_type,
+            type_filling=OrderTypeFilling.ORDER_FILLING_FOK,
+            type_time=OrderTypeTime.ORDER_TIME_GTC,
+            expiration=self.trade.expiration,
+            comment=self.trade.comment,
+        )
         result_open_request = mt5.order_send(request_open.__dict__())
         iterator = 0
         while (

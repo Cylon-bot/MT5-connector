@@ -54,7 +54,7 @@ class TradeObject:
             raise ValueError("Unrecognized trade order type on your trade object.")
 
 
-@ dataclass
+@dataclass
 class Candle:
     """A Dataclass object representing a Candle.
 
@@ -73,7 +73,7 @@ class Candle:
     close: float
 
 
-@ dataclass
+@dataclass
 class MarketOrder:
     """A Dataclass object representing an order on the market.
 
@@ -111,18 +111,20 @@ class MarketOrder:
         self.magic = randint(0, 1_000_000)
 
     def __dict__(self) -> Dict[str, Any]:
-        dict_request = {"action": self.action,
-                        "magic": self.magic,
-                        "symbol": self.symbol,
-                        "volume": self.volume,
-                        "price": self.price,
-                        "sl": self.sl,
-                        "tp": self.tp,
-                        "deviation": self.deviation,
-                        "type": self.order_type,
-                        "type_filling": self.type_filling,
-                        "type_time": self.type_time,
-                        "expiration": self.expiration,
-                        "comment": self.comment}
+        dict_request = {
+            "action": self.action,
+            "magic": self.magic,
+            "symbol": self.symbol,
+            "volume": self.volume,
+            "price": self.price,
+            "sl": self.sl,
+            "tp": self.tp,
+            "deviation": self.deviation,
+            "type": self.order_type,
+            "type_filling": self.type_filling,
+            "type_time": self.type_time,
+            "expiration": self.expiration,
+            "comment": self.comment,
+        }
 
         return {key: value for key, value in dict_request if value is not None}
