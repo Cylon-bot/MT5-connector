@@ -2,67 +2,69 @@ from typing import Optional
 
 import MetaTrader5 as mt5
 
-from tools.dataclass_definition import TradeObject
+from errors.trade_error import NoPriceGiven, NoTradableSymbol
+from tools.dataclass_definition import MarketOrder, TradeObject
 from mt5_connector.account import Account
-from tools.global_object import DIRECT_ORDERS, PENDING_ORDERS, mt5_connector_logger
+from tools.global_object import DIRECT_ORDERS, PENDING_ORDERS, DirectOrder, OrderTypeFilling, OrderTypeTime, TradeRequestActions, mt5_connector_logger
 
 
 class TradeManagement:
     """class use to manage a specified trade on MT5
 
     attr:
-        trade (TradeObject): _description_
-        account (Account): _description_
+        trade (TradeObject): An TradeObject representing a trade on the market.
+        account (Account): An Account object containing all MT5 account info.
     """
+
     trade: TradeObject
     account: Account
 
-    def __init__(
-        self,
-        trade_object: TradeObject,
-        account: Account
-    ):
+    def __init__(self, trade_object: TradeObject, account: Account):
+        """initialise this object
+
+        Args:
+            trade_object (TradeObject): _description_
+            account (Account): _description_
+        """
         self.trade = trade_object
-        if self.tp is not None:
-            self.open_request["tp"] = self.tp
-        if self.sl is not None:
-            self.open_request["sl"] = self.sl
         self.account = account
 
-    def open_position(
-        self,
-        size: Optional[float] = None,
-    ) -> "response_mt5":
+    def open_position(self) -> "response_mt5":
+        """open a new position using the Trade attribute
+
+        Raises:
+            NoTradableSymbol: Raise this error if you attempt to create a position on a no tradable symbol.
+            NoPriceGiven: Raise this error if you attempt to create a pending order without a price.
+            ValueError: Raise this error if you gave a unrecognized trade order type
+
+        Returns:
+            response_mt5: _description_
         """
-        use to open a market order on the given symbol
-        this market order can be :
-            - direct sell
-            - direct buy
-            - buy limit
-            - sell limit
-            - buy stop
-            - sell stop
-        """
-        request_open = {}
+
         symbol_is_tradable = self.check_symbol(self.trade.symbol)
         if not symbol_is_tradable:
-            raise ValueError("failed to open position cause this symbol cannot be found or trade.")
+            raise NoTradableSymbol("failed to open position cause this symbol cannot be found or trade.")
 
-        if self.trade.order_type in PENDING_ORDERS and self.price is None:
-            raise ValueError("You need to give a price for a pending order")
+        if self.trade.volume is None:
+            self.trade.volume = self.find_position_size_forex()
 
-        elif self.trade.order_type in DIRECT_ORDERS:
-            request_open["deviation"] = 20
+        order_type_is_direct_order = isinstance(self.trade.order_type, DirectOrder)
+        if order_type_is_direct_order:
             self.finding_actual_price()
-        else:
-            raise ValueError("Unrocognized trade order type.")
 
-        if size is None:
-            request_open["volume"] = self.find_position_size_forex()
-        else:
-            request_open["volume"] = size
-
-        result_open_request = mt5.order_send(self.request_open)
+        request_open = MarketOrder(action=TradeRequestActions.TRADE_ACTION_DEAL if order_type_is_direct_order else TradeRequestActions.TRADE_ACTION_PENDING,
+                                   symbol=self.trade.symbol,
+                                   volume=self.trade.volume,
+                                   price=self.trade.price,
+                                   sl=self.trade.sl,
+                                   tp=self.trade.tp,
+                                   deviation=self.trade.deviation,
+                                   order_type=self.trade.order_type,
+                                   type_filling=OrderTypeFilling.ORDER_FILLING_FOK,
+                                   type_time=OrderTypeTime.ORDER_TIME_GTC,
+                                   expiration=self.trade.expiration,
+                                   comment=self.trade.comment)
+        result_open_request = mt5.order_send(request_open.__dict__())
         iterator = 0
         while (
             result_open_request.comment == "Requote"
@@ -71,17 +73,19 @@ class TradeManagement:
             or (result_open_request.comment == "Invalid volume")
         ) and iterator < 50:
             self.finding_actual_price()
+            self.request_open.price = self.trade.price
 
-            if size is None:
-                request_open["volume"] = self.find_position_size_forex()
-            else:
-                request_open["volume"] = size
+            if self.trade.volume is None:
+                self.trade.volume = self.find_position_size_forex()
+                self.request_open.volume = self.trade.volume
+                result_open_request = mt5.order_send(request_open.__dict__())
+                iterator += 1
 
-            result_open_request = mt5.order_send(self.request_open)
-            iterator += 1
-        if self.result_open_request.retcode != mt5.TRADE_RETCODE_DONE:
+        if result_open_request.retcode != mt5.TRADE_RETCODE_DONE:
             mt5_connector_logger.error(f"Failed to send order, retcode: {result_open_request.retcode}")
-            return result_open_request
+        else:
+            self.trade.ticket = result_open_request.ticket
+        return result_open_request
 
     def finding_actual_price(self):
         """
@@ -150,10 +154,7 @@ class TradeManagement:
             }
         result_close_request = mt5.order_send(close_request)
 
-        while (
-            result_close_request.comment == "Requote"
-            and self.request_open["action"] == mt5.TRADE_ACTION_DEAL
-        ):
+        while result_close_request.comment == "Requote" and self.request_open["action"] == mt5.TRADE_ACTION_DEAL:
             if (
                 self.order_type == mt5.ORDER_TYPE_BUY
                 or self.order_type == mt5.ORDER_TYPE_BUY_STOP

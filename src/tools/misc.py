@@ -13,6 +13,7 @@ class Singleton(type):
     Args:
         type : type of the given class
     """
+
     _instances = {}
 
     def __call__(self, *args, **kwargs) -> type:
@@ -28,7 +29,7 @@ class Singleton(type):
 
 
 def read_yaml(path_yaml: Union[str, Path]) -> YAML_TYPE:
-    """read a yaml file 
+    """read a yaml file
 
     Args:
         path_yaml (Union[str, Path]): path of the yaml file
@@ -37,6 +38,6 @@ def read_yaml(path_yaml: Union[str, Path]) -> YAML_TYPE:
         YAML_TYPE: a dict representing the given yaml content
     """
 
-    with open(path_yaml, 'r') as file:
+    with open(path_yaml, "r") as file:
         config_file = yaml.load(file, Loader=yaml.FullLoader)
     return config_file

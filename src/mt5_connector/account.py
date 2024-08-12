@@ -1,4 +1,3 @@
-
 """
 file to help you connect to A metatrader 5 Account
 
@@ -7,7 +6,7 @@ file to help you connect to A metatrader 5 Account
 from datetime import datetime, timedelta
 import logging
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import MetaTrader5 as mt5
 
@@ -15,12 +14,22 @@ from tools.global_object import mt5_connector_logger
 from tools.misc import Singleton, read_yaml
 
 
-class Account(Singleton):
-    """Create a new connection with MT5 API using configuration files
+class Account(metaclass=Singleton):
+    """Create a new connection with MT5 API using configuration files.
 
-    Args:
-        Singleton (Singleton object): assure that only one account is connected at the same time
+    Attr:
+        id_account (str): id of your MT5 account.
+        psw_account (str): password of your MT5 account.
+        server_account (str): server of your MT5 account.
+        account_currency (str): currency symbol of your MT5 account.
+        account_info (AccountInfo): info of your account given by the MT5 API.
     """
+
+    id_account: str
+    psw_account: str
+    server_account: str
+    account_currency: str
+    account_info: mt5.AccountInfo
 
     def __init__(self, connection_file_path: Union[str, Path]):
         """Use the given yaml file path to connect to the metatrade5 account.
@@ -34,46 +43,51 @@ class Account(Singleton):
         ##########
 
         Args:
-            connection_file_path (Union[str, Path]): path of your connection file path
+            connection_file_path (Union[str, Path]): path of your connection file path.
 
         Raises:
-            ConnectionError: raise this error if a connection error occurs in MT5 API
+            ConnectionError: raise this error if a connection error occurs in MT5 API.
         """
         data_credential_file = read_yaml(connection_file_path)
         self.id_account = data_credential_file["login"]
         self.psw_account = data_credential_file["password"]
         self.server_account = data_credential_file["server"]
-        self.account_currency = connection_file_path["currency"]
-        self.account_info = mt5.account_info()
+        self.account_currency = data_credential_file["currency"]
         mt5.initialize()
-        authorized = mt5.login(self.id_account, self.psw_account, self.server_account)
+        authorized = mt5.login(
+            self.id_account,
+            self.psw_account,
+            self.server_account,
+        )
+        self.account_info = mt5.account_info()
         if authorized:
-            logging.info(f"Connected: Connecting to MT5 Client with account :\n"
-                         f"ID account : {self.id_account}\n"
-                         f"Server : {self.server_account}")
+            logging.info(
+                f"Connected: Connecting to MT5 Client with account :\n"
+                f"ID account : {self.id_account}\n"
+                f"Server : {self.server_account}"
+            )
         else:
-            raise ConnectionError("Failed to connect at account #{}, error code: {}".format(
-                self.id_account, mt5.last_error())
+            raise ConnectionError(
+                "Failed to connect at account #{}, error code: {}".format(
+                    self.id_account,
+                    mt5.last_error(),
+                )
             )
 
-    def get_updated_account_info(self) -> "mt5_object":
-        """get the info of the account
-
-        Returns:
-            mt5_object: info of the account
-        """
+    def get_updated_account_info(self):
+        """get the updated info of the account from MT5 API."""
         self.account_info = mt5.account_info()
 
     @staticmethod
-    def get_order_history(date_from: datetime = datetime.now() - timedelta(hours=24), date_to: datetime = datetime.now() + timedelta(hours=5)) -> "mt5_object":
-        """get history of trades from the connected account
+    def get_order_history(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeDeal]:
+        """get history of trades from the connected account.
 
         Args:
-            date_from (datetime, optional): _description_. Defaults to datetime.now()-timedelta(hours=24).
-            date_to (datetime, optional): _description_. Defaults to datetime.now()+timedelta(hours=5).
+            date_from (datetime): date from which we get the historical trade (take care, this will take the metatrader5 time zone).
+            date_to (datetime): date to which we get the historical trade (take care, this will take the metatrader5 time zone).
 
         Returns:
-            _type_: _description_
+            tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.
         """
         res = mt5.history_deals_get(date_from, date_to)
         if res is not None and res != ():
@@ -82,14 +96,14 @@ class Account(Singleton):
             return None
 
     @staticmethod
-    def get_positions(symbol=None) -> "mt5_object":
-        """return all on going positions from a specified symbol or from all symbol
+    def get_positions(symbol: Optional[str] = None) -> tuple[mt5.TradePosition]:
+        """return all on going positions from a specified symbol or from all symbol if not any are provided.
 
         Args:
-            symbol (_type_, optional): return only the position of the given symbol, give all position otherwise. Defaults to None.
+            symbol (str, optional): return only the positions of the given symbol, give all position otherwise. Defaults to None.
 
         Returns:
-            pd.DataFrame: _description_
+            tuple[mt5.TradePosition]: return a tuple of TradePosition object provided by MT5 API.
         """
         if symbol is None:
             res = mt5.positions_get()
@@ -117,8 +131,12 @@ class Account(Singleton):
             return False
 
         if not symbol_info.visible:
-            mt5_connector_logger.info(f"this symbol: {symbol} is not visible in the broker trading list, trying to switch it on")
+            mt5_connector_logger.info(
+                f"this symbol: {symbol} is not visible in the broker trading list, trying to switch it on"
+            )
             if not mt5.symbol_select(symbol, True):
-                mt5_connector_logger.warning(f"this symbol: {symbol} is not visible and cannot be selected in the broker trading list")
+                mt5_connector_logger.warning(
+                    f"this symbol: {symbol} is not visible and cannot be selected in the broker trading list"
+                )
                 return False
         return True

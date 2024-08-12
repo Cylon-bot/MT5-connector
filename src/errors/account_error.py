@@ -1,4 +1,3 @@
-
 from typing import Any
 
 
@@ -26,4 +25,6 @@ class ConnectionError(Exception):
             str: return the error givent by MT5 in a good format
         """
         return "Failed to connect at account #{}, error code: {}".format(
-            self.id_account, self.mt5_error)
+            self.id_account,
+            self.mt5_error,
+        )
