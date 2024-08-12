@@ -1,3 +1,7 @@
+"""
+file where all dataclass model are defined
+"""
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from random import randint

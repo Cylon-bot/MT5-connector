@@ -1,3 +1,7 @@
+"""
+file to help you get the data candle from MT5
+"""
+
 from datetime import datetime
 
 import MetaTrader5 as mt5

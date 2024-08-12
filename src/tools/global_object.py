@@ -1,3 +1,7 @@
+"""
+file where all global object are defined
+"""
+
 from enum import Enum
 import logging
 import sys

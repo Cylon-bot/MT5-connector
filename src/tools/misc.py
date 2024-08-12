@@ -1,3 +1,7 @@
+"""
+file with misc tools use by the library
+"""
+
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Union

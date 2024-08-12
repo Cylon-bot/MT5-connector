@@ -1,3 +1,7 @@
+"""
+file to help you manage a trade on MT5
+"""
+
 from typing import Optional
 
 import MetaTrader5 as mt5

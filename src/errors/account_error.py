@@ -1,3 +1,7 @@
+"""
+file with all errors regarding account connection on MT5  
+"""
+
 from typing import Any
 
 
