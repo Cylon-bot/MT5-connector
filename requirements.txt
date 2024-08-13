@@ -1,2 +1,3 @@
 pyyaml
 metatrader5
+numpy>=1.21,<2.0
