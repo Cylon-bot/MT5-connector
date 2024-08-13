@@ -2,16 +2,12 @@
 A library use to help you connect with metatrader5 API in python.
 
 # Sumary
- In this library you can connect to your account in MT5, manage your trades and get data candles.
+In this library you can connect to your account in MT5, manage your trades and get data candles.
 
 # Connect to your Account
-to connect to your account use instanciate a Account object:
+to connect to your account, instanciate an Account object:
 
     from mt5_connector.account import Account
-
-    account = Account("account_configuration.yaml")
-
-your account configuration file needs to look like this:
 
     currency: EUR
     server  : MetaQuotes-Demo
