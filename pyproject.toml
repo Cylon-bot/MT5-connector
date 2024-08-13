@@ -1,6 +1,28 @@
 [tool.black]
 line-length = 120
+
 [tool.pytest.ini_options]
-pythonpath = [
-  "src"
+pythonpath = ["src"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mt5_connector"
+version = "1.0.0"
+authors = [
+  { name = "Thibault Delrieu", email = "thibault.delrieu34@gmail.com" },
 ]
+description = "A metatrader5 connector package with python"
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
