@@ -20,16 +20,21 @@ class Singleton(type):
 
     _instances = {}
 
-    def __call__(self, *args, **kwargs) -> type:
+    def __call__(cls, *args, **kwargs) -> type:
         """return the instanciation of the given object
 
         Returns:
-            _type_: the type of the given object
+            type: the type of the given object
         """
 
-        if self not in self._instances:
-            self._instances[self] = super(Singleton, self).__call__(*args, **kwargs)
-        return self._instances[self]
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+    def clear(cls):
+        """delete the given class from the Singleton instanciation
+        """
+        del cls._instances[cls]
 
 
 def read_yaml(path_yaml: Union[str, Path]) -> YAML_TYPE:

@@ -2,7 +2,7 @@
 file to help you connect to A metatrader 5 Account
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 from pathlib import Path
 from typing import Optional, Union

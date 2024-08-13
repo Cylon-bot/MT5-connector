@@ -31,6 +31,10 @@ def get_data(symbols: str, time_frame: int, date_from: datetime, date_to: dateti
         date_from,
         date_to,
     )
+
+    if data is None:
+        return []
+
     data = [
         Candle(
             datetime.fromtimestamp(candle[0], tz=None),
