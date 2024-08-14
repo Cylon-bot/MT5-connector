@@ -56,7 +56,7 @@ class TradeManagement:
 
         order_type_is_direct_order = isinstance(self.trade.order_type, DirectOrder)
         if order_type_is_direct_order:
-            self.finding_actual_price()
+            self.finding_current_price()
 
         if self.trade.volume is None:
             self.trade.volume = self.find_position_size_forex()
@@ -145,7 +145,7 @@ class TradeManagement:
 
         return result_close_request
 
-    def finding_actual_price(self):
+    def finding_current_price(self):
         """in case of a direct order, we need to find the actual price
         """
         if self.trade.order_type == DirectOrder.ORDER_TYPE_BUY:

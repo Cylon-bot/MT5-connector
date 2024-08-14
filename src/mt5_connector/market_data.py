@@ -46,3 +46,27 @@ def get_data(symbols: str, time_frame: int, date_from: datetime, date_to: dateti
         for candle in data
     ]
     return data
+
+
+def get_current_ask_price(symbol: str) -> float:
+    """get the current ask price for a given symbol
+
+    Args:
+        symbol (str): symbol of the market instrument
+
+    Returns:
+        float: current ask price of the given symbol
+    """
+    return mt5.symbol_info_tick(symbol).ask
+
+
+def get_current_bid_price(symbol: str) -> float:
+    """get the current bid price for a given symbol
+
+    Args:
+        symbol (str): symbol of the market instrument
+
+    Returns:
+        float: current bid price of the given symbol
+    """
+    return mt5.symbol_info_tick(symbol).bid
