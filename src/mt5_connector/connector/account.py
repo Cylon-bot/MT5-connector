@@ -97,10 +97,10 @@ class Account(metaclass=Singleton):
 
     @staticmethod
     def get_order_history_by_ticket(ticket: int) -> tuple[mt5.TradeDeal]:
-        """get history of trades from the connected account using ticket order.
+        """get history of trades from the connected account using deal ticket.
 
         Args:
-            ticket (int): ticket order use to retrieve historical trades
+            ticket (int): deal ticket use to retrieve historical trades
 
         Returns:
             tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.
@@ -132,21 +132,21 @@ class Account(metaclass=Singleton):
             return ()
 
     @staticmethod
-    def get_position_by_ticket(ticket: int) -> Optional[mt5.TradePosition]:
-        """return position from a specified ticket.
+    def get_positions_by_ticket(ticket: int) -> tuple[mt5.TradePosition]:
+        """return positions from a specified trade ticket.
 
         Args:
-            ticket (int): return only the position of the given ticket.
+            ticket (int): trade ticket use to retrieve positions.
 
         Returns:
-            Optional[mt5.TradePosition]: return a TradePosition object provided by MT5 API if the position has been found
+            tuple[mt5.TradePosition]: return a tuple of TradePosition object provided by MT5 API.
         """
         res = mt5.positions_get(ticket=ticket)
 
         if res is not None and res != ():
             return res
         else:
-            return None
+            return ()
 
     @staticmethod
     def check_symbol(symbol: str) -> bool:
