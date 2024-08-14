@@ -9,7 +9,7 @@ import MetaTrader5 as mt5
 from mt5_connector.tools.dataclass_definition import Candle
 
 
-def get_data(symbols: str, time_frame: int, date_from: datetime, date_to: datetime) -> list[Candle]:
+def get_data(symbol: str, time_frame: int, date_from: datetime, date_to: datetime) -> list[Candle]:
     """return the data of the specified symbol on the given time slot and timeframe.
 
     WARNING: The last candle is the current printing candle,
@@ -26,7 +26,7 @@ def get_data(symbols: str, time_frame: int, date_from: datetime, date_to: dateti
         list[Candle]: return a list of Candle object representing the data
     """
     data = mt5.copy_rates_range(
-        symbols,
+        symbol,
         time_frame,
         date_from,
         date_to,
