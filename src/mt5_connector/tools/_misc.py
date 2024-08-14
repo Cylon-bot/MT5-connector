@@ -8,7 +8,7 @@ from typing import Any, Union
 
 import yaml
 
-from tools.global_object import YAML_TYPE
+from mt5_connector.tools.global_object import YAML_TYPE
 
 
 class Singleton(type):

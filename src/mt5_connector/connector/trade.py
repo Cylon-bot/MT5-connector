@@ -6,10 +6,10 @@ from typing import Optional
 
 import MetaTrader5 as mt5
 
-from errors.trade_error import NoTradableSymbol
-from tools.dataclass_definition import MarketOrder, TradeObject
-from mt5_connector.account import Account
-from tools.global_object import (
+from mt5_connector.errors.trade_error import NoTradableSymbol
+from mt5_connector.tools.dataclass_definition import MarketOrder, TradeObject
+from mt5_connector.connector.account import Account
+from mt5_connector.tools.global_object import (
     DirectOrder,
     OrderTypeFilling,
     OrderTypeTime,

@@ -6,7 +6,7 @@ from datetime import datetime
 
 import MetaTrader5 as mt5
 
-from tools.dataclass_definition import Candle
+from mt5_connector.tools.dataclass_definition import Candle
 
 
 def get_data(symbols: str, time_frame: int, date_from: datetime, date_to: datetime) -> list[Candle]:

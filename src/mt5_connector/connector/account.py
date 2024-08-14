@@ -9,8 +9,8 @@ from typing import Optional, Union
 
 import MetaTrader5 as mt5
 
-from tools.global_object import mt5_connector_logger
-from tools.misc import Singleton, read_yaml
+from mt5_connector.tools.global_object import mt5_connector_logger
+from mt5_connector.tools._misc import Singleton, read_yaml
 
 
 class Account(metaclass=Singleton):

@@ -1,7 +1,7 @@
 import pytest
-from errors.trade_error import NoPriceGiven
-from tools.dataclass_definition import TradeObject
-from tools.global_object import DirectOrder, PendingOrder
+from mt5_connector.errors.trade_error import NoPriceGiven
+from mt5_connector.tools.dataclass_definition import TradeObject
+from mt5_connector.tools.global_object import DirectOrder, PendingOrder
 
 
 def test_trade_object_raise_value_error_1():

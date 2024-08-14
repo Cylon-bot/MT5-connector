@@ -7,8 +7,8 @@ from datetime import datetime
 from random import randint
 from typing import Any, Dict, Optional
 
-from errors.trade_error import NoPriceGiven
-from tools.global_object import Order, OrderTypeFilling, OrderTypeTime, PendingOrder, TradeRequestActions
+from mt5_connector.errors.trade_error import NoPriceGiven
+from mt5_connector.tools.global_object import Order, OrderTypeFilling, OrderTypeTime, PendingOrder, TradeRequestActions
 
 
 @dataclass
