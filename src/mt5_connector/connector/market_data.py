@@ -6,7 +6,7 @@ from datetime import datetime
 
 import MetaTrader5 as mt5
 
-from mt5_connector.tools.dataclass_definition import Candle
+from mt5_connector.tools.dataclass_definition import Candle, Tick
 
 
 def get_data(symbol: str, time_frame: int, date_from: datetime, date_to: datetime) -> list[Candle]:
@@ -48,13 +48,21 @@ def get_data(symbol: str, time_frame: int, date_from: datetime, date_to: datetim
     return data
 
 
-def get_current_tick(symbol: str) -> mt5.Tick:
+def get_current_tick(symbol: str) -> Tick:
     """get the current tick for a given symbol
 
     Args:
         symbol (str): symbol of the market instrument
 
     Returns:
-        mt5.Tick: current tick of the given symbol
+        Tick: current tick of the given symbol
     """
-    return mt5.symbol_info_tick(symbol)
+    tick = mt5.symbol_info_tick(symbol)
+    return Tick(time=datetime.fromtimestamp(tick[0], tz=None),
+                bid=tick[1],
+                ask=tick[2],
+                last=tick[3],
+                volume=tick[4],
+                time_msc=datetime.fromtimestamp(tick[5]/1000.0, tz=None),
+                flags=tick[6],
+                volume_real=tick[7])

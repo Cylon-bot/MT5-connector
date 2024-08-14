@@ -80,6 +80,30 @@ class Candle:
 
 
 @dataclass
+class Tick:
+    """A Dataclass object representing a Tick.
+
+    Attr:
+        time (datetime): Time of the last prices update.
+        bid (float): Current Bid price.
+        ask (float): Current Ask price.
+        last (float): Price of the last deal.
+        volume (float): Volume for the current Last price.
+        time_msc (datetime): Time of a price last update in milliseconds.
+        flags (int): Tick flags.
+        volume_real (float): Volume for the current last price with greater accuracy.
+    """
+    time: datetime
+    bid: float
+    ask: float
+    last: float
+    volume: float
+    time_msc: datetime
+    flags: int
+    volume_real: float
+
+
+@dataclass
 class MarketOrder:
     """A Dataclass object representing an order on the market.
 
