@@ -20,7 +20,7 @@ class TradeObject:
         order_type (Order): Order type. The value can be one of the values of the Order enumeration.
         deviation (float): Maximum acceptable deviation from the requested price, specified in points. Defaults to 20 points.
         ticket (int): Order ticket. Required for modifying pending orders.
-        deal (int): deal id. Required for requesting trade after it is closed.
+        ticket_deal (int): deal ticket. Required for requesting trade.
         price (Optional, float): Price at which an order should be executed. The price is not set in case of market orders having the DirectOrder type.
         sl (Optional, float): A price a Stop Loss order is activated at when the price moves in an unfavorable direction.
         tp (Optional, float): A price a Take Profit order is activated at when the price moves in a favorable direction.
@@ -33,7 +33,7 @@ class TradeObject:
     symbol: str
     order_type: Order
     ticket: int = field(init=False)
-    deal: int = field(init=False)
+    ticket_deal: int = field(init=False)
     deviation: float = 20
     price: Optional[float] = None
     volume: Optional[float] = None

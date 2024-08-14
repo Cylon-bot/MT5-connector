@@ -86,7 +86,7 @@ class TradeManagement:
             mt5_connector_logger.error("Failed to send order")
         else:
             self.trade.ticket = result_open_request.order
-            self.trade.deal = result_open_request.deal
+            self.trade.ticket_deal = result_open_request.deal
             mt5_connector_logger.info("Order successfully opened!")
         return result_open_request
 

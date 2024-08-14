@@ -9,7 +9,8 @@ from typing import Optional, Union
 
 import MetaTrader5 as mt5
 
-from mt5_connector.tools.global_object import mt5_connector_logger
+from mt5_connector.tools.dataclass_definition import MarketOrder
+from mt5_connector.tools.global_object import DirectOrder, OrderTypeFilling, OrderTypeTime, PendingOrder, TradeRequestActions, mt5_connector_logger
 from mt5_connector.tools._misc import Singleton, read_yaml
 
 
@@ -131,6 +132,23 @@ class Account(metaclass=Singleton):
             return ()
 
     @staticmethod
+    def get_position_by_ticket(ticket: int) -> Optional[mt5.TradePosition]:
+        """return position from a specified ticket.
+
+        Args:
+            ticket (int): return only the position of the given ticket.
+
+        Returns:
+            Optional[mt5.TradePosition]: return a TradePosition object provided by MT5 API if the position has been found
+        """
+        res = mt5.positions_get(ticket=ticket)
+
+        if res is not None and res != ():
+            return res
+        else:
+            return None
+
+    @staticmethod
     def check_symbol(symbol: str) -> bool:
         """check if the given symbol exist in the broker trading list
 
@@ -155,3 +173,41 @@ class Account(metaclass=Singleton):
                 )
                 return False
         return True
+
+    def delete_all_on_going_positions(self) -> None:
+        """delete all on going positions (not pending)
+        """
+        all_positions = self.get_positions()
+        for position in all_positions:
+            if (
+                position.type == DirectOrder.ORDER_TYPE_BUY.value
+                or position.type == PendingOrder.ORDER_TYPE_BUY_STOP.value
+                or position.type == PendingOrder.ORDER_TYPE_BUY_LIMIT.value
+            ):
+                order_type_close = DirectOrder.ORDER_TYPE_SELL.value
+                price_close = mt5.symbol_info_tick(position.symbol).bid
+            elif (
+                position.type == DirectOrder.ORDER_TYPE_SELL.value
+                or position.type == PendingOrder.ORDER_TYPE_SELL_STOP.value
+                or position.type == PendingOrder.ORDER_TYPE_SELL_LIMIT.value
+            ):
+                order_type_close = DirectOrder.ORDER_TYPE_BUY.value
+                price_close = mt5.symbol_info_tick(position.symbol).ask
+
+            close_request = MarketOrder(
+                action=TradeRequestActions.TRADE_ACTION_DEAL.value,
+                symbol=position.symbol,
+                volume=position.volume,
+                order_type=order_type_close,
+                position=position.ticket,
+                price=price_close,
+                type_filling=OrderTypeFilling.ORDER_FILLING_FOK.value,
+                type_time=OrderTypeTime.ORDER_TIME_GTC.value,
+                comment="Close trade",
+            )
+            result_close_request = mt5.order_send(close_request.__dict__())
+
+            if result_close_request.retcode != mt5.TRADE_RETCODE_DONE:
+                mt5_connector_logger.error("Failed to close order")
+            else:
+                mt5_connector_logger.info("Order successfully closed!")
