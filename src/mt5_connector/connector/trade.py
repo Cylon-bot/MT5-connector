@@ -94,7 +94,7 @@ class TradeManagement:
         """close a position either pending or in going.
 
         Args:
-            volume_to_close (Optional[float]): if no volume is provided, the position will be completely closed, oterwise it will be partially close by the amout of given volume.
+            volume_to_close (Optional[float]): if no volume is provided, the position will be completely closed, oterwise it will be partially close by the amount of given volume.
 
         Returns:
             mt5.OrderSendResult: result sent by MT5
@@ -140,7 +140,8 @@ class TradeManagement:
         if result_close_request.retcode != mt5.TRADE_RETCODE_DONE:
             mt5_connector_logger.error("Failed to close order")
         else:
-            self.trade.volume -= volume_to_close if volume_to_close is not None else self.trade.volume
+            self.trade.closed_tickets.append(result_close_request.order)
+            self.trade.closed_deals.append(result_close_request.deal)
             mt5_connector_logger.info("Order successfully closed!")
 
         return result_close_request

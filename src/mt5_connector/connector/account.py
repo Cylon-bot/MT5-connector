@@ -79,7 +79,40 @@ class Account(metaclass=Singleton):
         self.account_info = mt5.account_info()
 
     @staticmethod
-    def get_order_history_by_date(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeDeal]:
+    def get_order_history_by_date(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeOrder]:
+        """get history of trades from the connected account using dates.
+
+        Args:
+            date_from (datetime): date from which we get the historical trade (take care, this will take the metatrader5 time zone).
+            date_to (datetime): date to which we get the historical trade (take care, this will take the metatrader5 time zone).
+
+        Returns:
+            tuple[mt5.TradeOrder]: return a tuple of TradeOrder object provided by MT5 API.
+        """
+        res = mt5.history_orders_get(date_from=date_from, date_to=date_to)
+        if res is not None and res != ():
+            return res
+        else:
+            return ()
+
+    @staticmethod
+    def get_order_history_by_ticket(ticket: int) -> tuple[mt5.TradeOrder]:
+        """get history of trades from the connected account using trade ticket.
+
+        Args:
+            ticket (int): trade ticket use to retrieve historical trades.
+
+        Returns:
+            tuple[mt5.TradeOrder]: return a tuple of TradeOrder object provided by MT5 API.
+        """
+        res = mt5.history_orders_get(ticket=ticket)
+        if res is not None and res != ():
+            return res
+        else:
+            return ()
+
+    @staticmethod
+    def get_deal_history_by_date(date_from: datetime, date_to: datetime) -> tuple[mt5.TradeDeal]:
         """get history of trades from the connected account using dates.
 
         Args:
@@ -96,11 +129,11 @@ class Account(metaclass=Singleton):
             return ()
 
     @staticmethod
-    def get_order_history_by_ticket(ticket: int) -> tuple[mt5.TradeDeal]:
+    def get_deal_history_by_ticket(ticket: int) -> tuple[mt5.TradeDeal]:
         """get history of trades from the connected account using deal ticket.
 
         Args:
-            ticket (int): deal ticket use to retrieve historical trades
+            ticket (int): deal ticket use to retrieve historical trades.
 
         Returns:
             tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.

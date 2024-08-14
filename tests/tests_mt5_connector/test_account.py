@@ -37,40 +37,40 @@ def test_account_connection_not_ok(mocker):
 
 
 def test_get_order_history_by_date_ok(mocker):
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=("this is a test",))
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=("this is a test",))
     res = Account.get_order_history_by_date(date_from=datetime.now(), date_to=datetime.now())
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ("this is a test",)
 
 
 def test_get_order_history_by_date_empty(mocker):
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=None)
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=None)
     res = Account.get_order_history_by_date(date_from=datetime.now(), date_to=datetime.now())
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ()
 
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=())
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=())
     res = Account.get_order_history_by_date(date_from=datetime.now(), date_to=datetime.now())
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ()
 
 
 def test_get_order_history_by_ticket_ok(mocker):
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=("this is a test",))
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=("this is a test",))
     res = Account.get_order_history_by_ticket(ticket=1)
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ("this is a test",)
 
 
 def test_get_order_history_by_ticket_empty(mocker):
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=None)
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=None)
     res = Account.get_order_history_by_ticket(ticket=1)
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ()
 
-    mocker_mt5_history_deals_get = mocker.patch('mt5_connector.connector.account.mt5.history_deals_get', return_value=())
+    mocker_mt5_history_orders_get = mocker.patch('mt5_connector.connector.account.mt5.history_orders_get', return_value=())
     res = Account.get_order_history_by_ticket(ticket=1)
-    mocker_mt5_history_deals_get.assert_called_once()
+    mocker_mt5_history_orders_get.assert_called_once()
     assert res == ()
 
 

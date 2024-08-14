@@ -20,7 +20,9 @@ class TradeObject:
         order_type (Order): Order type. The value can be one of the values of the Order enumeration.
         deviation (float): Maximum acceptable deviation from the requested price, specified in points. Defaults to 20 points.
         ticket (int): Order ticket. Required for modifying pending orders.
-        ticket_deal (int): deal ticket. Required for requesting trade.
+        ticket_deal (int): deal ticket. Required for requesting deal.
+        closed_tickets (list[int]): Order tickets. Required for requesting trades use for closing this one (yan can make several close trades if you partially close using volume).
+        closed_deals (list[int]): deal tickets. Required for requesting trades use for closing this one (list in the same order than closed_tickets).
         price (Optional, float): Price at which an order should be executed. The price is not set in case of market orders having the DirectOrder type.
         sl (Optional, float): A price a Stop Loss order is activated at when the price moves in an unfavorable direction.
         tp (Optional, float): A price a Take Profit order is activated at when the price moves in a favorable direction.
@@ -34,6 +36,8 @@ class TradeObject:
     order_type: Order
     ticket: int = field(init=False)
     ticket_deal: int = field(init=False)
+    closed_tickets: list[int] = field(init=False)
+    closed_deals: list[int] = field(init=False)
     deviation: float = 20
     price: Optional[float] = None
     volume: Optional[float] = None
@@ -50,6 +54,8 @@ class TradeObject:
             ValueError: Raise the first ValueError if the user forgot to provide either a volume or either a risk AND sl.
             ValueError: Raise the second ValueError if the user gave a volume AND a risk which makes no sense.
         """
+        self.closed_tickets = []
+        self.closed_deals = []
         if (self.risk is None or self.sl is None) and self.volume is None:
             raise ValueError("You need to either specified a risk AND sl OR a volume.")
         if self.risk is not None and self.volume is not None:
