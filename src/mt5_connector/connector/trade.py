@@ -129,12 +129,12 @@ class TradeManagement:
                 price=price_close,
                 type_filling=OrderTypeFilling.ORDER_FILLING_FOK.value,
                 type_time=OrderTypeTime.ORDER_TIME_GTC.value,
-                comment="Close trade",
+                comment=self.trade.comment,
             )
         else:
             close_request = MarketOrder(action=TradeRequestActions.TRADE_ACTION_REMOVE.value,
                                         ticket=self.trade.ticket,
-                                        comment="Close trade")
+                                        comment=self.trade.comment)
         result_close_request = mt5.order_send(close_request.__dict__())
 
         if result_close_request.retcode != mt5.TRADE_RETCODE_DONE:
