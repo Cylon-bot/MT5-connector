@@ -119,11 +119,11 @@ class TradeManagement:
             ):
                 order_type_close = DirectOrder.ORDER_TYPE_BUY.value
                 price_close = mt5.symbol_info_tick(self.trade.symbol).ask
-
+            position = self.account.get_positions_by_ticket(self.trade.ticket)[0]
             close_request = MarketOrder(
                 action=TradeRequestActions.TRADE_ACTION_DEAL.value,
                 symbol=self.trade.symbol,
-                volume=volume_to_close if volume_to_close is not None else self.trade.volume,
+                volume=volume_to_close if volume_to_close is not None else position.volume,
                 order_type=order_type_close,
                 position=self.trade.ticket,
                 price=price_close,
