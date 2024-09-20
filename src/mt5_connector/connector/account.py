@@ -89,7 +89,7 @@ class Account(metaclass=Singleton):
         Returns:
             tuple[mt5.TradeOrder]: return a tuple of TradeOrder object provided by MT5 API.
         """
-        res = mt5.history_orders_get(date_from=date_from, date_to=date_to)
+        res = mt5.history_orders_get(date_from, date_to)
         if res is not None and res != ():
             return res
         else:
@@ -122,7 +122,7 @@ class Account(metaclass=Singleton):
         Returns:
             tuple[mt5.TradeDeal]: return a tuple of TradeDeal object provided by MT5 API.
         """
-        res = mt5.history_deals_get(date_from=date_from, date_to=date_to)
+        res = mt5.history_deals_get(date_from, date_to)
         if res is not None and res != ():
             return res
         else:
