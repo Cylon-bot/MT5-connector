@@ -154,14 +154,14 @@ class TradeManagement:
         elif self.trade.order_type == DirectOrder.ORDER_TYPE_SELL:
             self.trade.price = mt5.symbol_info_tick(self.trade.symbol).bid
 
-    def move_tp(self, new_tp: float) -> mt5.OrderSendResult:
+    def move_tp(self, new_tp: float) -> Optional[mt5.OrderSendResult]:
         """move your tp on your on going trade
 
         Args:
             new_tp (float): new tp to set
 
         Returns:
-            mt5.OrderSendResult: result sent by MT5
+            mt5.OrderSendResult: result sent by MT5 if the tp was moved
         """
         take_profit_trade = self.trade.tp
         if take_profit_trade != new_tp:
@@ -179,16 +179,16 @@ class TradeManagement:
             else:
                 mt5_connector_logger.info(f"successfully moved TP from {self.trade.tp} to {new_tp}")
                 self.trade.tp = new_tp
-        return result_modify_request
+            return result_modify_request
 
-    def move_sl(self, new_sl: float) -> mt5.OrderSendResult:
+    def move_sl(self, new_sl: float) -> Optional[mt5.OrderSendResult]:
         """move your sl on your on going trade
 
         Args:
             new_sl (float): new sl to set
 
         Returns:
-            mt5.OrderSendResult: result sent by MT5
+            mt5.OrderSendResult: result sent by MT5 if the sl was moved
         """
         stop_loss_trade = self.trade.sl
         if stop_loss_trade != new_sl:
@@ -206,7 +206,7 @@ class TradeManagement:
             else:
                 mt5_connector_logger.info(f"successfully moved SL from {self.trade.sl} to {new_sl}")
                 self.trade.sl = new_sl
-        return result_modify_request
+            return result_modify_request
 
     def find_position_size_forex(self) -> float:
         """help you found the lot for a forex trade.
