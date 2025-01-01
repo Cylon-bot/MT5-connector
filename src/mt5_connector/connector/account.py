@@ -163,6 +163,26 @@ class Account(metaclass=Singleton):
             return res
         else:
             return ()
+        
+    @staticmethod
+    def get_orders_positioned(symbol: Optional[str] = None) -> tuple[mt5.TradeOrder]:
+        """return all positioned trade from a specified symbol or from all symbol if not any are provided.
+
+        Args:
+            symbol (str, optional): return only the positions of the given symbol, give all position otherwise. Defaults to None.
+
+        Returns:
+            tuple[mt5.TradePosition]: return a tuple of TradePosition object provided by MT5 API.
+        """
+        if symbol is None:
+            res = mt5.orders_get()
+        else:
+            res = mt5.orders_get(symbol=symbol)
+
+        if res is not None and res != ():
+            return res
+        else:
+            return ()
 
     @staticmethod
     def get_positions_by_ticket(ticket: int) -> tuple[mt5.TradePosition]:
