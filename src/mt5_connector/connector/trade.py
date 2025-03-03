@@ -220,15 +220,22 @@ class TradeManagement:
         sl_size = abs(self.trade.sl - self.trade.price)
         self.account.get_updated_account_info()
         balance = self.account.account_info.balance
+        print(f"balance --> {balance}")
+        print(f"symbol --> {self.trade.symbol}")
         if currency_2.lower() == "jpy":
+            print("jpy")
             jpy_pip_converter = 100
             pip_value = (balance * risk_percentage) / (sl_size / jpy_pip_converter)
         else:
+            print("not jpy")
             pip_value = (balance * risk_percentage) / sl_size
+        print(f"pip_value --> {pip_value}")
         one_lot_price = 100_000
         account_currency_conversion = self.find_account_currency_conversion()
+        print(f"account_currency_conversion --> {account_currency_conversion}")
         calculate_lot = (pip_value / one_lot_price) * account_currency_conversion
         lot_size = round(calculate_lot, 2)
+        print(f"lot --> {lot_size}")
         return lot_size
 
     def find_account_currency_conversion(self) -> float:
