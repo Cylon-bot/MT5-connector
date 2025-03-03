@@ -222,7 +222,7 @@ class TradeManagement:
         balance = self.account.account_info.balance
         if currency_2.lower() == "jpy":
             jpy_pip_converter = 100
-            pip_value = (balance * risk_percentage) / (sl_size * jpy_pip_converter)
+            pip_value = (balance * risk_percentage) / (sl_size / jpy_pip_converter)
         else:
             pip_value = (balance * risk_percentage) / sl_size
         one_lot_price = 100_000
